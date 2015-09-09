@@ -116,7 +116,6 @@ class AssetFinder(object):
 
         self.conn = sqlite3.connect(db_path)
         self.conn.text_factory = str
-        self.cursor = self.conn.cursor()
 
         # The AssetFinder also holds a nested-dict of all metadata for
         # reference when building Assets
@@ -197,6 +196,7 @@ class AssetFinder(object):
         c.execute('CREATE INDEX asset_router_sid on asset_router(sid)')
 
         self.conn.commit()
+        c.close()
 
     def asset_type_by_sid(self, sid):
         try:
@@ -256,6 +256,7 @@ class AssetFinder(object):
         t = (int(sid),)
         c.execute(EQUITY_BY_SID_QUERY, t)
         data = dict(c.fetchone())
+        c.close()
         if data:
             if data['start_date']:
                 data['start_date'] = pd.Timestamp(data['start_date'], tz='UTC')
@@ -285,6 +286,7 @@ class AssetFinder(object):
         c.row_factory = Row
         c.execute(FUTURE_BY_SID_QUERY, t)
         data = dict(c.fetchone())
+        c.close()
         if data:
             if data['start_date']:
                 data['start_date'] = pd.Timestamp(data['start_date'], tz='UTC')
@@ -505,10 +507,13 @@ class AssetFinder(object):
             """, t)
             count = c.fetchone()[0]
             if count == 0:
+                c.close()
                 raise RootSymbolNotFound(root_symbol=root_symbol)
             else:
                 # If symbol exists, return empty future chain.
+                c.close()
                 return []
+        c.close()
         return [self._retrieve_futures_contract(sid) for sid in sids]
 
     @property
@@ -516,7 +521,9 @@ class AssetFinder(object):
         c = self.conn.cursor()
         query = 'select sid from asset_router'
         c.execute(query)
-        return [r[0] for r in c.fetchall()]
+        sids = [r[0] for r in c.fetchall()]
+        c.close()
+        return sids
 
     def _lookup_generic_scalar(self,
                                asset_convertible,
@@ -838,8 +845,10 @@ class AssetFinder(object):
             c.execute("""INSERT INTO asset_router(sid, asset_type)
             VALUES(?, ?)""", t)
         else:
+            c.close()
             raise InvalidAssetType(asset_type=asset_type)
 
+        c.close()
         self.metadata_cache[identifier] = entry
 
     def consume_identifiers(self, identifiers):
