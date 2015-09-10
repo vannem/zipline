@@ -33,7 +33,7 @@ FUTURE_TABLE_FIELDS = ASSET_TABLE_FIELDS | {
 }
 
 # Expected fields for an Equity's metadata
-EQUITY_TABLE_FIELDS = ASSET_TABLE_FIELDS
+EQUITY_TABLE_FIELDS = ASSET_TABLE_FIELDS | {'cusip'}
 
 EXCHANGE_TABLE_FIELDS = frozenset({
     'exchange',
@@ -51,6 +51,7 @@ ROOT_SYMBOL_TABLE_FIELDS = frozenset({
 # Default values for the equities DataFrame
 _equities_defaults = {
     'symbol': None,
+    'cusip': None,
     'asset_name': None,
     'start_date': 0,
     'end_date': 2 ** 62 - 1,
@@ -259,6 +260,7 @@ class AssetDBWriter(with_metaclass(ABCMeta)):
                 primary_key=constraints,
             ),
             sa.Column('symbol', sa.Text),
+            sa.Column('cusip', sa.Text),
             sa.Column('asset_name', sa.Text),
             sa.Column('start_date', sa.Integer, default=0),
             sa.Column('end_date', sa.Integer),
