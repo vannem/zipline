@@ -2263,9 +2263,6 @@ class TestPositionTracker(unittest.TestCase):
         pt.update_positions({1: pos1, 3: pos3})
         p_string = dumps_with_persistent_ids(pt)
         test = loads_with_persistent_ids(p_string, env=self.env)
-        nt.assert_dict_equal(test._position_amounts, pt._position_amounts)
-        nt.assert_dict_equal(test._position_last_sale_prices,
-                             pt._position_last_sale_prices)
         nt.assert_count_equal(test.positions.keys(), pt.positions.keys())
         for sid in pt.positions:
             nt.assert_dict_equal(test.positions[sid].__dict__,

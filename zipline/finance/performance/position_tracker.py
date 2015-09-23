@@ -170,8 +170,6 @@ class PositionTracker(object):
         # sid => position object
         self.positions = positiondict()
         # Arrays for quick calculations of positions value
-        self._position_amounts = OrderedDict()
-        self._position_last_sale_prices = OrderedDict()
         self._position_value_multipliers = OrderedDict()
         self._position_exposure_multipliers = OrderedDict()
         self._position_payout_multipliers = OrderedDict()
@@ -280,7 +278,6 @@ class PositionTracker(object):
         old_price = pos.last_sale_price
         pos.last_sale_date = event.dt
         pos.last_sale_price = price
-        self._position_last_sale_prices[sid] = price
 
         # Calculate cash adjustment on assets with multipliers
         return ((price - old_price) * self._position_payout_multipliers[sid]
@@ -290,8 +287,6 @@ class PositionTracker(object):
         # update positions in batch
         self.positions.update(positions)
         for sid, pos in iteritems(positions):
-            self._position_amounts[sid] = pos.amount
-            self._position_last_sale_prices[sid] = pos.last_sale_price
             self._update_asset(sid)
 
     def update_position(self, sid, amount=None, last_sale_price=None,
@@ -300,7 +295,6 @@ class PositionTracker(object):
 
         if amount is not None:
             pos.amount = amount
-            self._position_amounts[sid] = amount
             self._position_values = None  # invalidate cache
             self._update_asset(sid=sid)
         if last_sale_price is not None:
@@ -318,8 +312,6 @@ class PositionTracker(object):
         sid = txn.sid
         position = self.positions[sid]
         position.update(txn)
-        self._position_amounts[sid] = position.amount
-        self._position_last_sale_prices[sid] = position.last_sale_price
         self._update_asset(sid)
 
     def handle_commission(self, commission):
@@ -334,9 +326,6 @@ class PositionTracker(object):
             # leftover cash from a fractional share, if there is any.
             position = self.positions[split.sid]
             leftover_cash = position.handle_split(split)
-            self._position_amounts[split.sid] = position.amount
-            self._position_last_sale_prices[split.sid] = \
-                position.last_sale_price
             self._update_asset(split.sid)
             return leftover_cash
 
@@ -402,8 +391,6 @@ class PositionTracker(object):
             position = self.positions[stock]
 
             position.amount += share_count
-            self._position_amounts[stock] = position.amount
-            self._position_last_sale_prices[stock] = position.last_sale_price
             self._update_asset(stock)
 
         # Add cash equal to the net cash payed from all dividends.  Note that
@@ -414,15 +401,20 @@ class PositionTracker(object):
         return net_cash_payment
 
     def maybe_create_close_position_transaction(self, event):
-        if not self._position_amounts.get(event.sid):
+        try:
+            pos = self.positions[event.sid]
+            amount = pos.amount
+            if amount == 0:
+                return None
+        except KeyError:
             return None
         if 'price' in event:
             price = event.price
         else:
-            price = self._position_last_sale_prices[event.sid]
+            price = pos.price
         txn = Transaction(
             sid=event.sid,
-            amount=(-1 * self._position_amounts[event.sid]),
+            amount=(-1 * pos.amount),
             dt=event.dt,
             price=price,
             commission=0,
@@ -491,8 +483,6 @@ class PositionTracker(object):
         self._auto_close_position_sids = state['auto_close_position_sids']
 
         # Arrays for quick calculations of positions value
-        self._position_amounts = OrderedDict()
-        self._position_last_sale_prices = OrderedDict()
         self._position_value_multipliers = OrderedDict()
         self._position_exposure_multipliers = OrderedDict()
         self._position_payout_multipliers = OrderedDict()
