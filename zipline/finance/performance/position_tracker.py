@@ -45,8 +45,8 @@ def calc_position_values(amounts,
                          last_sale_prices,
                          value_multipliers):
     iter_amount_price_multiplier = zip(
-        itervalues(amounts),
-        itervalues(last_sale_prices),
+        amounts,
+        last_sale_prices,
         itervalues(value_multipliers),
     )
     return [
@@ -66,8 +66,8 @@ def calc_position_exposures(amounts,
                             last_sale_prices,
                             exposure_multipliers):
     iter_amount_price_multiplier = zip(
-        itervalues(amounts),
-        itervalues(last_sale_prices),
+        amounts,
+        last_sale_prices,
         itervalues(exposure_multipliers),
     )
     return [
@@ -116,8 +116,12 @@ def calc_net_exposure(position_exposures):
 
 
 def calc_position_stats(pt):
-    amounts = pt._position_amounts
-    last_sale_prices = pt._position_last_sale_prices
+    amounts = []
+    last_sale_prices = []
+    for pos in itervalues(pt.positions):
+        amounts.append(pos.amount)
+        last_sale_prices.append(pos.last_sale_price)
+
     position_value_multipliers = pt._position_value_multipliers
     position_exposure_multipliers = pt._position_exposure_multipliers
 
