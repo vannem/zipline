@@ -295,12 +295,9 @@ class PositionTracker(object):
 
         if amount is not None:
             pos.amount = amount
-            self._position_values = None  # invalidate cache
             self._update_asset(sid=sid)
         if last_sale_price is not None:
             pos.last_sale_price = last_sale_price
-            self._position_last_sale_prices[sid] = last_sale_price
-            self._position_values = None  # invalidate cache
         if last_sale_date is not None:
             pos.last_sale_date = last_sale_date
         if cost_basis is not None:
