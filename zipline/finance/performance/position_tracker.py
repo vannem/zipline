@@ -411,7 +411,7 @@ class PositionTracker(object):
         if 'price' in event:
             price = event.price
         else:
-            price = pos.price
+            price = pos.last_sale_price
         txn = Transaction(
             sid=event.sid,
             amount=(-1 * pos.amount),
