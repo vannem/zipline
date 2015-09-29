@@ -132,7 +132,7 @@ def create_txn(trade_event, price, amount):
     of a given trade event.
     """
     mock_order = Order(trade_event.dt, trade_event.sid, amount, id=None)
-    return create_transaction(trade_event, trade_event.dt,
+    return create_transaction(trade_event.sid, trade_event.dt,
                               mock_order, price, amount)
 
 
@@ -1664,6 +1664,7 @@ shares in position"
         pp = perf.PerformancePeriod(
             1000.0,
             self.env.asset_finder,
+            data_portal,
             period_open=sim_params.period_start,
             period_close=sim_params.period_end,
         )
