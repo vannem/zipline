@@ -964,12 +964,13 @@ class TestDividendPerformance(unittest.TestCase):
         self.sim_params.update_internal_from_env(self.env)
 
         # Simulate a transaction being filled prior to the ex_date.
-        txns = [create_txn(events[0], 10.0, 100)]
+        txns = [create_txn(events[0].sid, events[0].dt, 10.0, 100)]
         results = calculate_results(
             self.sim_params,
             self.env,
+            self.tempdir,
             self.benchmark_events,
-            events,
+            {1: events},
             dividend_events=[dividend],
             txns=txns,
         )
