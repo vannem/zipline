@@ -126,14 +126,13 @@ def check_account(account,
                                account['net_liquidation'], rtol=1e-3)
 
 
-def create_txn(trade_event, price, amount):
+def create_txn(sid, dt, price, amount):
     """
     Create a fake transaction to be filled and processed prior to the execution
     of a given trade event.
     """
-    mock_order = Order(trade_event.dt, trade_event.sid, amount, id=None)
-    return create_transaction(trade_event.sid, trade_event.dt,
-                              mock_order, price, amount)
+    mock_order = Order(dt, sid, amount, id=None)
+    return create_transaction(sid, dt, mock_order, price, amount)
 
 
 def benchmark_events_in_range(sim_params, env):
@@ -157,7 +156,8 @@ def calculate_results(sim_params,
                       trade_events,
                       dividend_events=None,
                       splits=None,
-                      txns=None):
+                      txns=None,
+                      cash_adjustments=None):
     """
     Run the given events through a stripped down version of the loop in
     AlgorithmSimulator.transform.
@@ -209,6 +209,13 @@ def calculate_results(sim_params,
         for txn in filter(lambda txn: txn.dt == date, txns):
             # Process txns for this date.
             perf_tracker.process_transaction(txn)
+
+        try:
+            cash_adjustments_for_date = cash_adjustments[date]
+            for adj in cash_adjustments_for_date:
+                perf_tracker.process_commission(adj)
+        except KeyError:
+            pass
 
         msg = perf_tracker.handle_market_close_daily()
         msg['account'] = perf_tracker.get_account(True)
@@ -382,7 +389,8 @@ class TestCommissionEvents(unittest.TestCase):
         # Total commission = $3.50 + $15.00 + $9.00 = $27.50
 
         # Create 3 transactions:  50, 100, 150 shares traded @ $20
-        transactions = [create_txn(trade_events[0], 20, i)
+        first_trade = trade_events[0]
+        transactions = [create_txn(first_trade.sid, first_trade.dt, 20, i)
                         for i in [50, 100, 150]]
 
         # Create commission models and validate that produce expected
@@ -401,22 +409,24 @@ class TestCommissionEvents(unittest.TestCase):
         # Verify that commission events are handled correctly by
         # PerformanceTracker.
         events = []
+        cash_adjustments = {}
         cash_adj_dt = trade_events[0].dt
         cash_adjustment = factory.create_commission(1, 300.0, cash_adj_dt)
-        events.append(cash_adjustment)
+        cash_adjustments[cash_adj_dt] = [cash_adjustment]
 
         # Insert a purchase order.
-        txns = [create_txn(events[0], 20, 1)]
+        txns = [create_txn(1, cash_adj_dt, 20, 1)]
         results = calculate_results(self.sim_params,
                                     self.env,
                                     self.tempdir,
                                     self.benchmark_events,
                                     {1: trade_events},
-                                    txns=txns)
+                                    txns=txns,
+                                    cash_adjustments=cash_adjustments)
 
         # Validate that we lost 320 dollars from our cash pool.
         self.assertEqual(results[-1]['cumulative_perf']['ending_cash'],
-                         9680)
+                         9680, "Should have lost 320 from cash pool.")
         # Validate that the cost basis of our position changed.
         self.assertEqual(results[-1]['daily_perf']['positions']
                          [0]['cost_basis'], 320.0)
