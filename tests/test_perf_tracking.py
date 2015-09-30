@@ -1826,6 +1826,12 @@ class TestPerformanceTracker(unittest.TestCase):
     def tearDownClass(cls):
         del cls.env
 
+    def setUp(self):
+        self.tempdir = TempDirectory()
+
+    def tearDown(self):
+        self.tempdir.cleanup()
+
     NumDaysToDelete = collections.namedtuple(
         'NumDaysToDelete', ('start', 'middle', 'end'))
 
@@ -2133,8 +2139,17 @@ class TestPerformanceTracker(unittest.TestCase):
             env=self.env
         )
 
+        data_portal = create_data_portal_from_trade_history(
+            self.env,
+            self.tempdir,
+            sim_params,
+            {1: events}
+        )
+
         # Create a tracker and a dividend
-        perf_tracker = perf.PerformanceTracker(sim_params, env=self.env)
+        perf_tracker = perf.PerformanceTracker(sim_params,
+                                               env=self.env,
+                                               data_portal=data_portal)
         dividend = factory.create_dividend(
             1,
             10.00,
