@@ -1669,7 +1669,7 @@ shares in position"
             self.env
         )
         trades = factory.create_trade_history(*history_args)
-        transactions = factory.create_txn_history(*history_args)
+        transactions = factory.create_txn_history(*history_args)[:4]
 
         data_portal = create_data_portal_from_trade_history(
             self.env,
@@ -1683,7 +1683,7 @@ shares in position"
             self.env.asset_finder,
             data_portal,
             period_open=sim_params.period_start,
-            period_close=sim_params.period_end,
+            period_close=sim_params.trading_days[-2]
         )
         pp.position_tracker = pt
 
@@ -1698,7 +1698,7 @@ shares in position"
 
         self.assertEqual(
             pp.positions[1].last_sale_price,
-            trades[-1].price,
+            trades[-2].price,
             "should have a last sale of 12, got {val}".format(
                 val=pp.positions[1].last_sale_price)
         )
@@ -1714,7 +1714,7 @@ shares in position"
             400
         )
 
-        down_tick = history_args[0][0]
+        down_tick = trades[-1]
 
         sale_txn = create_txn(
             down_tick.sid,
