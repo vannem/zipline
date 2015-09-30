@@ -471,21 +471,23 @@ class TestCommissionEvents(unittest.TestCase):
         # Buy and sell the same sid so that we have a zero position by the
         # time of events[3].
         txns = [
-            create_txn(events[0], 20, 1),
-            create_txn(events[1], 20, -1),
+            create_txn(events[0].sid, events[0].dt, 20, 1),
+            create_txn(events[1].sid, events[1].dt, 20, -1),
         ]
 
         # Add a cash adjustment at the time of event[3].
         cash_adj_dt = events[3].dt
+        commissions = {}
         cash_adjustment = factory.create_commission(1, 300.0, cash_adj_dt)
-
-        events.append(cash_adjustment)
+        commissions[cash_adj_dt] = [cash_adjustment]
 
         results = calculate_results(self.sim_params,
                                     self.env,
+                                    self.tempdir,
                                     self.benchmark_events,
-                                    events,
-                                    txns=txns)
+                                    {1: events},
+                                    txns=txns,
+                                    commissions=commissions)
         # Validate that we lost 300 dollars from our cash pool.
         self.assertEqual(results[-1]['cumulative_perf']['ending_cash'],
                          9700)
