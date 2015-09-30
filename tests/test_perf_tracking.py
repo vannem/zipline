@@ -183,6 +183,7 @@ def calculate_results(sim_params,
 
     txns = txns or []
     splits = splits or []
+    commissions = commissions or {}
 
     data_portal = create_data_portal_from_trade_history(
         env,
@@ -371,6 +372,9 @@ class TestCommissionEvents(unittest.TestCase):
 
         self.tempdir = TempDirectory()
 
+    def tearDown(self):
+        self.tempdir.cleanup()
+
     def test_commission_event(self):
         trade_events = factory.create_trade_history(
             1,
@@ -539,6 +543,11 @@ class TestDividendPerformance(unittest.TestCase):
 
         self.benchmark_events = benchmark_events_in_range(self.sim_params,
                                                           self.env)
+
+        self.tempdir = TempDirectory()
+
+    def tearDown(self):
+        self.tempdir.cleanup()
 
     def test_market_hours_calculations(self):
         # DST in US/Eastern began on Sunday March 14, 2010
@@ -764,15 +773,16 @@ class TestDividendPerformance(unittest.TestCase):
             events[5].dt
         )
 
-        buy_txn = create_txn(events[1], 10.0, 100)
-        sell_txn = create_txn(events[2], 10.0, -100)
+        buy_txn = create_txn(events[1].sid, events[1].dt, 10.0, 100)
+        sell_txn = create_txn(events[2].sid, events[2].dt, 10.0, -100)
         txns = [buy_txn, sell_txn]
 
         results = calculate_results(
             self.sim_params,
             self.env,
+            self.tempdir,
             self.benchmark_events,
-            events,
+            {1: events},
             dividend_events=[dividend],
             txns=txns,
         )
