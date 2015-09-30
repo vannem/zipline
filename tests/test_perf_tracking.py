@@ -900,8 +900,8 @@ class TestDividendPerformance(unittest.TestCase):
         # post some trades in the market
         events = factory.create_trade_history(
             1,
-            [10, 10, 10, 10, 10],
-            [100, 100, 100, 100, 100],
+            [10, 10, 10, 10, 10, 10],
+            [100, 100, 100, 100, 100, 100],
             oneday,
             self.sim_params,
             env=self.env
@@ -918,22 +918,23 @@ class TestDividendPerformance(unittest.TestCase):
         results = calculate_results(
             self.sim_params,
             self.env,
+            self.tempdir,
             self.benchmark_events,
-            events,
+            {1: events},
             dividend_events=[dividend],
         )
 
-        self.assertEqual(len(results), 5)
+        self.assertEqual(len(results), 6)
         cumulative_returns = \
             [event['cumulative_perf']['returns'] for event in results]
-        self.assertEqual(cumulative_returns, [0.0, 0.0, 0.0, 0.0, 0.0])
+        self.assertEqual(cumulative_returns, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         daily_returns = [event['daily_perf']['returns'] for event in results]
-        self.assertEqual(daily_returns, [0.0, 0.0, 0.0, 0.0, 0.0])
+        self.assertEqual(daily_returns, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         cash_flows = [event['daily_perf']['capital_used'] for event in results]
-        self.assertEqual(cash_flows, [0, 0, 0, 0, 0])
+        self.assertEqual(cash_flows, [0, 0, 0, 0, 0, 0])
         cumulative_cash_flows = \
             [event['cumulative_perf']['capital_used'] for event in results]
-        self.assertEqual(cumulative_cash_flows, [0, 0, 0, 0, 0])
+        self.assertEqual(cumulative_cash_flows, [0, 0, 0, 0, 0, 0])
 
     def test_no_dividend_at_simulation_end(self):
         # post some trades in the market
