@@ -204,34 +204,15 @@ def calculate_results(sim_params,
 
     results = []
 
-    bm_updated = False
-    for date, group in grouped_trades_plus_bm:
+    for date in sim_params.trading_days:
 
         for txn in filter(lambda txn: txn.dt == date, txns):
             # Process txns for this date.
             perf_tracker.process_transaction(txn)
 
-        for event in group:
-
-            if event.type == zp.DATASOURCE_TYPE.TRADE:
-                perf_tracker.process_trade(event)
-            elif event.type == zp.DATASOURCE_TYPE.DIVIDEND:
-                perf_tracker.process_dividend(event)
-            elif event.type == zp.DATASOURCE_TYPE.BENCHMARK:
-                perf_tracker.process_benchmark(event)
-                bm_updated = True
-            elif event.type == zp.DATASOURCE_TYPE.COMMISSION:
-                perf_tracker.process_commission(event)
-
-        for split in filter(lambda split: split.dt == date, splits):
-            # Process splits for this date.
-            perf_tracker.process_split(split)
-
-        if bm_updated:
-            msg = perf_tracker.handle_market_close_daily()
-            msg['account'] = perf_tracker.get_account(True)
-            results.append(msg)
-            bm_updated = False
+        msg = perf_tracker.handle_market_close_daily()
+        msg['account'] = perf_tracker.get_account(True)
+        results.append(msg)
     return results
 
 
