@@ -1882,8 +1882,39 @@ class TestPerformanceTracker(unittest.TestCase):
         sid = 133
         price = 10.1
         price_list = [price] * trade_count
+        price2 = 12.12
+        price2_list = [price2] * trade_count
         volume = [100] * trade_count
         trade_time_increment = timedelta(days=1)
+
+        price_list1 = np.array(price_list)
+        price_list2 = np.array(price2_list)
+        volume1 = np.array(volume)
+        volume2 = np.array(volume)
+
+        # 'middle' start of 3 depends on number of days == 7
+        middle = 3
+
+        # First delete from middle
+        if days_to_delete.middle:
+            volume1[middle:(middle + days_to_delete.middle)] = 0
+            volume2[middle:(middle + days_to_delete.middle)] = 0
+            price_list1[middle:(middle + days_to_delete.middle)] = 0
+            price_list2[middle:(middle + days_to_delete.middle)] = 0
+
+        # Delete start
+        if days_to_delete.start:
+            volume1[:days_to_delete.start]
+            volume2[:days_to_delete.start] = 0
+            price_list1[:days_to_delete.start] = 0
+            price_list2[:days_to_delete.start] = 0
+
+        # Delete from end
+        if days_to_delete.end:
+            volume1[-days_to_delete.end:] = 0
+            volume2[-days_to_delete.end:] = 0
+            price_list1[-days_to_delete.end:] = 0
+            price_list2[-days_to_delete.end:] = 0
 
         sim_params = SimulationParameters(
             period_start=start_dt,
@@ -1895,8 +1926,8 @@ class TestPerformanceTracker(unittest.TestCase):
 
         trade_history = factory.create_trade_history(
             sid,
-            price_list,
-            volume,
+            price_list1,
+            volume1,
             trade_time_increment,
             sim_params,
             source_id="factory1",
@@ -1904,34 +1935,15 @@ class TestPerformanceTracker(unittest.TestCase):
         )
 
         sid2 = 134
-        price2 = 12.12
-        price2_list = [price2] * trade_count
         trade_history2 = factory.create_trade_history(
             sid2,
-            price2_list,
-            volume,
+            price_list2,
+            volume2,
             trade_time_increment,
             sim_params,
             source_id="factory2",
             env=self.env
         )
-        # 'middle' start of 3 depends on number of days == 7
-        middle = 3
-
-        # First delete from middle
-        if days_to_delete.middle:
-            del trade_history[middle:(middle + days_to_delete.middle)]
-            del trade_history2[middle:(middle + days_to_delete.middle)]
-
-        # Delete start
-        if days_to_delete.start:
-            del trade_history[:days_to_delete.start]
-            del trade_history2[:days_to_delete.start]
-
-        # Delete from end
-        if days_to_delete.end:
-            del trade_history[-days_to_delete.end:]
-            del trade_history2[-days_to_delete.end:]
 
         sim_params.capital_base = 1000.0
         sim_params.frame_index = [
@@ -1940,8 +1952,17 @@ class TestPerformanceTracker(unittest.TestCase):
             'dt',
             'price',
             'changed']
+
+        data_portal = create_data_portal_from_trade_history(
+            self.env,
+            self.tempdir,
+            sim_params,
+            {sid: trade_history,
+             sid2: trade_history2},
+        )
+
         perf_tracker = perf.PerformanceTracker(
-            sim_params, self.env
+            sim_params, self.env, data_portal
         )
 
         events = date_sorted_sources(trade_history, trade_history2)
