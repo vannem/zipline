@@ -881,12 +881,12 @@ class TestDividendPerformance(unittest.TestCase):
             self.env,
             self.tempdir,
             self.benchmark_events,
-            events,
+            {1: events},
             dividend_events=[dividend],
             txns=txns,
         )
 
-        self.assertEqual(len(results), 5)
+        self.assertEqual(len(results), 6)
         cumulative_returns = \
             [event['cumulative_perf']['returns'] for event in results]
         self.assertEqual(cumulative_returns, [0.0, 0.0, 0.0, -0.1, -0.1, -0.1])
@@ -1001,8 +1001,9 @@ class TestDividendPerformanceHolidayStyle(TestDividendPerformance):
     # be skipped by the simulation.
 
     def setUp(self):
+        # TODO: 2003-11-30 is not the day before thanksgiving.
         self.dt = datetime(2003, 11, 30, tzinfo=pytz.utc)
-        self.end_dt = datetime(2004, 11, 25, tzinfo=pytz.utc)
+        self.end_dt = datetime(2003, 12, 8, tzinfo=pytz.utc)
         self.sim_params = SimulationParameters(
             self.dt,
             self.end_dt,
@@ -1012,6 +1013,8 @@ class TestDividendPerformanceHolidayStyle(TestDividendPerformance):
 
         self.benchmark_events = benchmark_events_in_range(self.sim_params,
                                                           self.env)
+
+        self.tempdir = TempDirectory()
 
 
 class TestPositionPerformance(unittest.TestCase):
