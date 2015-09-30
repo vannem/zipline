@@ -1658,12 +1658,12 @@ shares in position"
 
     def test_cost_basis_calc(self):
         sim_params = factory.create_simulation_parameters(
-            num_days=4, env=self.env
+            num_days=5, env=self.env
         )
         history_args = (
             1,
-            [10, 11, 11, 12],
-            [100, 100, 100, 100],
+            [10, 11, 11, 12, 10.0],
+            [100, 100, 100, 100, 100],
             oneday,
             sim_params,
             self.env
@@ -1714,14 +1714,11 @@ shares in position"
             400
         )
 
-        down_tick = factory.create_trade(
-            1,
-            10.0,
-            100,
-            trades[-1].dt + onesec)
+        down_tick = history_args[0][0]
 
         sale_txn = create_txn(
-            down_tick,
+            down_tick.sid,
+            down_tick.dt,
             10.0,
             -100)
 
