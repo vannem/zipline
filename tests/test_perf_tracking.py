@@ -2210,7 +2210,7 @@ class TestPerformanceTracker(unittest.TestCase):
         )
 
         perf_tracker = perf.PerformanceTracker(
-            sim_params, env=self.env
+            sim_params, env=self.env, data_portal=None,
         )
         check_perf_tracker_serialization(perf_tracker)
 
@@ -2350,8 +2350,8 @@ class TestPerformancePeriod(unittest.TestCase):
 
     def test_serialization(self):
         env = TradingEnvironment()
-        pt = perf.PositionTracker(env.asset_finder)
-        pp = perf.PerformancePeriod(100, env.asset_finder)
+        pt = perf.PositionTracker(env.asset_finder, data_portal=None)
+        pp = perf.PerformancePeriod(100, env.asset_finder, data_portal=None)
         pp.position_tracker = pt
 
         p_string = dumps_with_persistent_ids(pp)
