@@ -152,6 +152,7 @@ def benchmark_events_in_range(sim_params, env):
 
 def calculate_results(sim_params,
                       env,
+                      tempdir,
                       benchmark_events,
                       trade_events,
                       dividend_events=None,
@@ -183,7 +184,14 @@ def calculate_results(sim_params,
     txns = txns or []
     splits = splits or []
 
-    perf_tracker = perf.PerformanceTracker(sim_params, env)
+    data_portal = create_data_portal_from_trade_history(
+        env,
+        tempdir,
+        sim_params,
+        trade_events
+    )
+
+    perf_tracker = perf.PerformanceTracker(sim_params, env, data_portal)
 
     if dividend_events is not None:
         dividend_frame = pd.DataFrame(
@@ -194,18 +202,6 @@ def calculate_results(sim_params,
         )
         perf_tracker.update_dividends(dividend_frame)
 
-    # Raw trades
-    trade_events = sorted(trade_events, key=lambda ev: (ev.dt, ev.source_id))
-
-    # Add a benchmark event for each date.
-    trades_plus_bm = date_sorted_sources(trade_events, benchmark_events)
-
-    # Filter out benchmark events that are later than the last trade date.
-    filtered_trades_plus_bm = (filt_event for filt_event in trades_plus_bm
-                               if filt_event.dt <= trade_events[-1].dt)
-
-    grouped_trades_plus_bm = itertools.groupby(filtered_trades_plus_bm,
-                                               lambda x: x.dt)
     results = []
 
     bm_updated = False
@@ -385,8 +381,10 @@ class TestCommissionEvents(unittest.TestCase):
         self.benchmark_events = benchmark_events_in_range(self.sim_params,
                                                           self.env)
 
+        self.tempdir = TempDirectory()
+
     def test_commission_event(self):
-        events = factory.create_trade_history(
+        trade_events = factory.create_trade_history(
             1,
             [10, 10, 10, 10, 10],
             [100, 100, 100, 100, 100],
@@ -403,7 +401,7 @@ class TestCommissionEvents(unittest.TestCase):
         # Total commission = $3.50 + $15.00 + $9.00 = $27.50
 
         # Create 3 transactions:  50, 100, 150 shares traded @ $20
-        transactions = [create_txn(events[0], 20, i)
+        transactions = [create_txn(trade_events[0], 20, i)
                         for i in [50, 100, 150]]
 
         # Create commission models and validate that produce expected
@@ -421,7 +419,8 @@ class TestCommissionEvents(unittest.TestCase):
 
         # Verify that commission events are handled correctly by
         # PerformanceTracker.
-        cash_adj_dt = events[0].dt
+        events = []
+        cash_adj_dt = trade_events[0].dt
         cash_adjustment = factory.create_commission(1, 300.0, cash_adj_dt)
         events.append(cash_adjustment)
 
@@ -429,8 +428,9 @@ class TestCommissionEvents(unittest.TestCase):
         txns = [create_txn(events[0], 20, 1)]
         results = calculate_results(self.sim_params,
                                     self.env,
+                                    self.tempdir,
                                     self.benchmark_events,
-                                    events,
+                                    {1: trade_events},
                                     txns=txns)
 
         # Validate that we lost 320 dollars from our cash pool.
