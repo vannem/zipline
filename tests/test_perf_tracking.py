@@ -157,7 +157,7 @@ def calculate_results(sim_params,
                       dividend_events=None,
                       splits=None,
                       txns=None,
-                      cash_adjustments=None):
+                      commissions=None):
     """
     Run the given events through a stripped down version of the loop in
     AlgorithmSimulator.transform.
@@ -211,9 +211,9 @@ def calculate_results(sim_params,
             perf_tracker.process_transaction(txn)
 
         try:
-            cash_adjustments_for_date = cash_adjustments[date]
-            for adj in cash_adjustments_for_date:
-                perf_tracker.process_commission(adj)
+            commissions_for_date = commissions[date]
+            for comm in commissions_for_date:
+                perf_tracker.process_commission(comm)
         except KeyError:
             pass
 
@@ -409,10 +409,10 @@ class TestCommissionEvents(unittest.TestCase):
         # Verify that commission events are handled correctly by
         # PerformanceTracker.
         events = []
-        cash_adjustments = {}
+        commissions = {}
         cash_adj_dt = trade_events[0].dt
         cash_adjustment = factory.create_commission(1, 300.0, cash_adj_dt)
-        cash_adjustments[cash_adj_dt] = [cash_adjustment]
+        commissions[cash_adj_dt] = [cash_adjustment]
 
         # Insert a purchase order.
         txns = [create_txn(1, cash_adj_dt, 20, 1)]
@@ -422,7 +422,7 @@ class TestCommissionEvents(unittest.TestCase):
                                     self.benchmark_events,
                                     {1: trade_events},
                                     txns=txns,
-                                    cash_adjustments=cash_adjustments)
+                                    commissions=commissions)
 
         # Validate that we lost 320 dollars from our cash pool.
         self.assertEqual(results[-1]['cumulative_perf']['ending_cash'],
@@ -505,13 +505,16 @@ class TestCommissionEvents(unittest.TestCase):
 
         # Add a cash adjustment at the time of event[3].
         cash_adj_dt = events[3].dt
+        commissions = {}
         cash_adjustment = factory.create_commission(1, 300.0, cash_adj_dt)
-        events.append(cash_adjustment)
+        commissions[cash_adj_dt] = [cash_adjustment]
 
         results = calculate_results(self.sim_params,
                                     self.env,
+                                    self.tempdir,
                                     self.benchmark_events,
-                                    events)
+                                    {1: events},
+                                    commissions=commissions)
         # Validate that we lost 300 dollars from our cash pool.
         self.assertEqual(results[-1]['cumulative_perf']['ending_cash'],
                          9700)
