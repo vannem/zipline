@@ -1040,7 +1040,6 @@ class TestPositionPerformance(unittest.TestCase):
         txn2 = create_txn(trades_2[1], 10.0, -100)
         pt = perf.PositionTracker(self.env.asset_finder)
         pp = perf.PerformancePeriod(1000.0, self.env.asset_finder)
-        pp.position_tracker = pt
         pt.execute_transaction(txn1)
         pp.handle_execution(txn1)
         pt.execute_transaction(txn2)
@@ -1118,7 +1117,6 @@ class TestPositionPerformance(unittest.TestCase):
         txn = create_txn(trades[1], 10.0, 1000)
         pt = perf.PositionTracker(self.env.asset_finder)
         pp = perf.PerformancePeriod(1000.0, self.env.asset_finder)
-        pp.position_tracker = pt
 
         pt.execute_transaction(txn)
         pp.handle_execution(txn)
@@ -1194,7 +1192,6 @@ class TestPositionPerformance(unittest.TestCase):
         txn = create_txn(trades[1], 10.0, 100)
         pt = perf.PositionTracker(self.env.asset_finder)
         pp = perf.PerformancePeriod(1000.0, self.env.asset_finder)
-        pp.position_tracker = pt
 
         pt.execute_transaction(txn)
         pp.handle_execution(txn)
@@ -1204,7 +1201,7 @@ class TestPositionPerformance(unittest.TestCase):
         # incorrectly show as sharply dipping if a transaction arrives
         # before a trade. This is caused by returns being based on holding
         # stocks with a last sale price of 0.
-        self.assertEqual(pp.positions[1].last_sale_price, 10.0)
+        self.assertEqual(pt.positions[1].last_sale_price, 10.0)
 
         for trade in trades:
             pt.update_last_sale(trade)
@@ -1217,17 +1214,17 @@ class TestPositionPerformance(unittest.TestCase):
         )
 
         self.assertEqual(
-            len(pp.positions),
+            len(pt.positions),
             1,
             "should be just one position")
 
         self.assertEqual(
-            pp.positions[1].sid,
+            pt.positions[1].sid,
             txn.sid,
             "position should be in security with id 1")
 
         self.assertEqual(
-            pp.positions[1].amount,
+            pt.positions[1].amount,
             txn.amount,
             "should have a position of {sharecount} shares".format(
                 sharecount=txn.amount
@@ -1235,18 +1232,18 @@ class TestPositionPerformance(unittest.TestCase):
         )
 
         self.assertEqual(
-            pp.positions[1].cost_basis,
+            pt.positions[1].cost_basis,
             txn.price,
             "should have a cost basis of 10"
         )
 
         self.assertEqual(
-            pp.positions[1].last_sale_price,
+            pt.positions[1].last_sale_price,
             trades[-1]['price'],
             "last sale should be same as last trade. \
             expected {exp} actual {act}".format(
                 exp=trades[-1]['price'],
-                act=pp.positions[1].last_sale_price)
+                act=pt.positions[1].last_sale_price)
         )
 
         self.assertEqual(
@@ -1298,7 +1295,6 @@ single short-sale transaction"""
         txn = create_txn(trades[1], 10.0, -100)
         pt = perf.PositionTracker(self.env.asset_finder)
         pp = perf.PerformancePeriod(1000.0, self.env.asset_finder)
-        pp.position_tracker = pt
 
         pt.execute_transaction(txn)
         pp.handle_execution(txn)
@@ -1313,30 +1309,30 @@ single short-sale transaction"""
         )
 
         self.assertEqual(
-            len(pp.positions),
+            len(pt.positions),
             1,
             "should be just one position")
 
         self.assertEqual(
-            pp.positions[1].sid,
+            pt.positions[1].sid,
             txn.sid,
             "position should be in security from the transaction"
         )
 
         self.assertEqual(
-            pp.positions[1].amount,
+            pt.positions[1].amount,
             -100,
             "should have a position of -100 shares"
         )
 
         self.assertEqual(
-            pp.positions[1].cost_basis,
+            pt.positions[1].cost_basis,
             txn.price,
             "should have a cost basis of 10"
         )
 
         self.assertEqual(
-            pp.positions[1].last_sale_price,
+            pt.positions[1].last_sale_price,
             trades_1[-1]['price'],
             "last sale should be price of last trade"
         )
@@ -1368,31 +1364,31 @@ single short-sale transaction"""
         )
 
         self.assertEqual(
-            len(pp.positions),
+            len(pt.positions),
             1,
             "should be just one position"
         )
 
         self.assertEqual(
-            pp.positions[1].sid,
+            pt.positions[1].sid,
             txn.sid,
             "position should be in security from the transaction"
         )
 
         self.assertEqual(
-            pp.positions[1].amount,
+            pt.positions[1].amount,
             -100,
             "should have a position of -100 shares"
         )
 
         self.assertEqual(
-            pp.positions[1].cost_basis,
+            pt.positions[1].cost_basis,
             txn.price,
             "should have a cost basis of 10"
         )
 
         self.assertEqual(
-            pp.positions[1].last_sale_price,
+            pt.positions[1].last_sale_price,
             trades_2[-1].price,
             "last sale should be price of last trade"
         )
@@ -1516,7 +1512,6 @@ trade after cover"""
         cover_txn = create_txn(trades[6], 7.0, 100)
         pt = perf.PositionTracker(self.env.asset_finder)
         pp = perf.PerformancePeriod(1000.0, self.env.asset_finder)
-        pp.position_tracker = pt
 
         pt.execute_transaction(short_txn)
         pp.handle_execution(short_txn)
@@ -1536,31 +1531,31 @@ trade after cover"""
         )
 
         self.assertEqual(
-            len(pp.positions),
+            len(pt.positions),
             1,
             "should be just one position"
         )
 
         self.assertEqual(
-            pp.positions[1].sid,
+            pt.positions[1].sid,
             short_txn.sid,
             "position should be in security from the transaction"
         )
 
         self.assertEqual(
-            pp.positions[1].amount,
+            pt.positions[1].amount,
             0,
             "should have a position of -100 shares"
         )
 
         self.assertEqual(
-            pp.positions[1].cost_basis,
+            pt.positions[1].cost_basis,
             0,
             "a covered position should have a cost basis of 0"
         )
 
         self.assertEqual(
-            pp.positions[1].last_sale_price,
+            pt.positions[1].last_sale_price,
             trades[-1].price,
             "last sale should be price of last trade"
         )
@@ -1614,27 +1609,27 @@ shares in position"
 
         pt = perf.PositionTracker(self.env.asset_finder)
         pp = perf.PerformancePeriod(1000.0, self.env.asset_finder)
-        pp.position_tracker = pt
 
         average_cost = 0
         for i, txn in enumerate(transactions):
             pt.execute_transaction(txn)
             pp.handle_execution(txn)
             average_cost = (average_cost * i + txn.price) / (i + 1)
-            self.assertEqual(pp.positions[1].cost_basis, average_cost)
+            self.assertEqual(pt.positions[1].cost_basis,
+                             average_cost)
 
         for trade in trades:
             pt.update_last_sale(trade)
 
         self.assertEqual(
-            pp.positions[1].last_sale_price,
+            pt.positions[1].last_sale_price,
             trades[-1].price,
             "should have a last sale of 12, got {val}".format(
-                val=pp.positions[1].last_sale_price)
+                val=pt.positions[1].last_sale_price)
         )
 
         self.assertEqual(
-            pp.positions[1].cost_basis,
+            pt.positions[1].cost_basis,
             11,
             "should have a cost basis of 11"
         )
@@ -1662,17 +1657,19 @@ shares in position"
         pt.update_last_sale(down_tick)
 
         self.assertEqual(
-            pp.positions[1].last_sale_price,
+            pt.positions[1].last_sale_price,
             10,
             "should have a last sale of 10, was {val}".format(
-                val=pp.positions[1].last_sale_price)
+                val=pt.positions[1].last_sale_price)
         )
 
         self.assertEqual(
-            pp.positions[1].cost_basis,
+            pt.positions[1].cost_basis,
             11,
             "should have a cost basis of 11"
         )
+        pos_stats = 
+        stats = 
 
         self.assertEqual(pp.pnl, -800, "this period goes from +400 to -400")
 
@@ -1728,17 +1725,16 @@ shares in position"
 
         pt = perf.PositionTracker(self.env.asset_finder)
         pp = perf.PerformancePeriod(1000.0, self.env.asset_finder)
-        pp.position_tracker = pt
 
         for txn, cb in zip(transactions, cost_bases):
             pt.execute_transaction(txn)
             pp.handle_execution(txn)
-            self.assertEqual(pp.positions[1].cost_basis, cb)
+            self.assertEqual(pt.positions[1].cost_basis, cb)
 
         for trade in trades:
             pt.update_last_sale(trade)
 
-        self.assertEqual(pp.positions[1].cost_basis, cost_bases[-1])
+        self.assertEqual(pt.positions[1].cost_basis, cost_bases[-1])
 
 
 class TestPerformanceTracker(unittest.TestCase):
@@ -1900,7 +1896,7 @@ class TestPerformanceTracker(unittest.TestCase):
         self.assertEqual(perf_tracker.txn_count, len(txns))
         self.assertEqual(perf_tracker.txn_count, len(orders))
 
-        positions = perf_tracker.cumulative_performance.positions
+        positions = perf_tracker.position_tracker.positions
         if len(txns) == 0:
             self.assertNotIn(sid, positions)
         else:
