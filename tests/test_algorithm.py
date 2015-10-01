@@ -765,9 +765,8 @@ class TestPositions(TestCase):
             0,
         ]
 
-        for i, expected in enumerate(expected_position_count):
-            self.assertEqual(daily_stats.ix[i]['num_positions'],
-                             expected)
+        np.testing.assert_array_equal(daily_stats['num_positions'],
+                                       expected_position_count)
 
     def test_noop_orders(self):
 
