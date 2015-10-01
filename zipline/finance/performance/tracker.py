@@ -424,23 +424,32 @@ class PerformanceTracker(object):
             If the market day has not ended, the daily perf packet is None.
         """
         todays_date = normalize_date(dt)
-        account = self.get_account(False)
+        account = self.get_account()
 
         bench_returns = self.all_benchmark_returns.loc[todays_date:dt]
         # cumulative returns
         bench_since_open = (1. + bench_returns).prod() - 1
 
-        minute_packet = self.to_dict(emission_type='minute')
+        pos_stats = calc_position_stats(self.position_tracker)
+        cumulative_stats = self.cumulative_performance.stats(pos_stats)
+        todays_stats = self.todays_performance.stats(pos_stats)
+
+        minute_packet = self.to_dict(pos_stats,
+                                     cumulative_stats,
+                                     todays_stats,
+                                     emission_type='minute')
 
         self.cumulative_risk_metrics.update(todays_date,
-                                            minute_packet['returns'],
+                                            todays_stats.returns,
                                             bench_since_open,
                                             account)
 
         # if this is the close, update dividends for the next day.
         # Return the performance tuple
         if dt == self.market_close:
-            return (minute_packet, self._handle_market_close(todays_date))
+            end_of_day_packet = self._handle_market_close(
+                todays_date, pos_stats, todays_stats)
+            return (minute_packet, end_of_day_packet)
         else:
             return (minute_packet, None)
 
