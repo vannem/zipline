@@ -242,7 +242,8 @@ class PerformanceTracker(object):
         position_stats = calc_position_stats(self.position_tracker)
         positions = self.position_tracker.get_positions()
         return self.cumulative_performance.as_portfolio(
-            positions
+            position_stats,
+            positions)
 
     def get_account(self):
         position_stats = calc_position_stats(self.position_tracker)
@@ -266,15 +267,17 @@ class PerformanceTracker(object):
             'period_start': self.period_start,
             'period_end': self.period_end,
             'capital_base': self.capital_base,
-            'cumulative_perf': self.cumulative_performance.to_dict(pos_stats),
+            'cumulative_perf': self.cumulative_performance.to_dict(
+                pos_stats, self.position_tracker),
             'progress': self.progress,
             'cumulative_risk_metrics': self.cumulative_risk_metrics.to_dict()
         }
         if emission_type == 'daily':
-            _dict['daily_perf'] = self.todays_performance.to_dict(pos_stats)
+            _dict['daily_perf'] = self.todays_performance.to_dict(
+                pos_stats, self.position_tracker)
         elif emission_type == 'minute':
             _dict['minute_perf'] = self.todays_performance.to_dict(
-                self.saved_dt)
+                pos_stats, self.position_tracker, self.saved_dt)
         else:
             raise ValueError("Invalid emission type: %s" % emission_type)
 
