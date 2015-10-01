@@ -260,12 +260,13 @@ class PerformancePeriod(object):
         # Calculate and return the cash flow given the multiplier
         return -1 * txn.price * txn.amount * multiplier
 
-    def __core_dict(self, pos_stats):
-        period_stats = calc_period_stats(pos_stats,
-                                         self.starting_cash,
-                                         self.starting_value,
-                                         self.period_cash_flow)
+    def stats(self, pos_stats):
+        return calc_period_stats(pos_stats,
+                                 self.starting_cash,
+                                 self.starting_value,
+                                 self.period_cash_flow)
 
+    def __core_dict(self, pos_stats, period_stats):
         rval = {
             'ending_value': pos_stats.net_value,
             'ending_exposure': pos_stats.net_exposure,
@@ -293,7 +294,7 @@ class PerformancePeriod(object):
 
         return rval
 
-    def to_dict(self, pos_stats, position_tracker, dt=None):
+    def to_dict(self, pos_stats, period_stats, position_tracker, dt=None):
         """
         Creates a dictionary representing the state of this performance
         period. See header comments for a detailed description.
@@ -301,7 +302,7 @@ class PerformancePeriod(object):
         Kwargs:
             dt (datetime): If present, only return transactions for the dt.
         """
-        rval = self.__core_dict(pos_stats)
+        rval = self.__core_dict(pos_stats, period_stats)
 
         if self.serialize_positions:
             positions = position_tracker.get_positions_list()
@@ -345,10 +346,7 @@ class PerformancePeriod(object):
         PerformancePeriod, and in this method we rename some
         fields for usability and remove extraneous fields.
         """
-        period_stats = calc_period_stats(pos_stats,
-                                         self.starting_cash,
-                                         self.starting_value,
-                                         self.period_cash_flow)
+        period_stats = self.stats(pos_stats)
         # Recycles containing objects' Portfolio object
         # which is used for returning values.
         # as_portfolio is called in an inner loop,
