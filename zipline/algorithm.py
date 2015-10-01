@@ -353,9 +353,6 @@ class TradingAlgorithm(object):
         # every bar no matter if the algorithm places an order or not.
         self.validate_account_controls()
 
-        self._portfolio = None
-        self._account = None
-
     def analyze(self, perf):
         if self._analyze is None:
             return
@@ -979,6 +976,8 @@ class TradingAlgorithm(object):
         self.datetime = dt
         self.perf_tracker.set_date(dt)
         self.blotter.set_date(dt)
+        self._portfolio = None
+        self._account = None
 
     @api_method
     def get_datetime(self, tz=None):
