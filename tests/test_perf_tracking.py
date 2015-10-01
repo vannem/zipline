@@ -1662,7 +1662,7 @@ shares in position"
         )
         history_args = (
             1,
-            [10, 11, 11, 12, 10.0],
+            [10, 11, 11, 12, 10],
             [100, 100, 100, 100, 100],
             oneday,
             sim_params,
@@ -1683,7 +1683,7 @@ shares in position"
             self.env.asset_finder,
             data_portal,
             period_open=sim_params.period_start,
-            period_close=sim_params.trading_days[-2]
+            period_close=sim_params.trading_days[-1]
         )
         pp.position_tracker = pt
 
@@ -1694,7 +1694,7 @@ shares in position"
             average_cost = (average_cost * i + txn.price) / (i + 1)
             self.assertEqual(pp.positions[1].cost_basis, average_cost)
 
-        pp.calculate_performance()
+        pp.calculate_performance(trades[-2].dt)
 
         self.assertEqual(
             pp.positions[1].last_sale_price,
@@ -1726,9 +1726,8 @@ shares in position"
 
         pt.execute_transaction(sale_txn)
         pp.handle_execution(sale_txn)
-        pt.update_last_sale(down_tick)
 
-        pp.calculate_performance()
+        pp.calculate_performance(trades[-1].dt)
         self.assertEqual(
             pp.positions[1].last_sale_price,
             10,
