@@ -353,6 +353,9 @@ class TradingAlgorithm(object):
         # every bar no matter if the algorithm places an order or not.
         self.validate_account_controls()
 
+        self._portfolio = None
+        self._account = None
+
     def analyze(self, perf):
         if self._analyze is None:
             return
@@ -890,7 +893,7 @@ class TradingAlgorithm(object):
         for control in self.trading_controls:
             control.validate(asset,
                              amount,
-                             self.portfolio,
+                             self.perf_tracker.position_tracker.positions,
                              self.get_datetime(),
                              self.trading_client.current_data)
 

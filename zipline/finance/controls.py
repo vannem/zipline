@@ -41,7 +41,7 @@ class TradingControl(with_metaclass(abc.ABCMeta)):
     def validate(self,
                  asset,
                  amount,
-                 portfolio,
+                 positions,
                  algo_datetime,
                  algo_current_data):
         """
@@ -96,7 +96,7 @@ class MaxOrderCount(TradingControl):
     def validate(self,
                  asset,
                  amount,
-                 _portfolio,
+                 positions,
                  algo_datetime,
                  _algo_current_data):
         """
@@ -133,7 +133,7 @@ class RestrictedListOrder(TradingControl):
     def validate(self,
                  asset,
                  amount,
-                 _portfolio,
+                 _positions,
                  _algo_datetime,
                  _algo_current_data):
         """
@@ -176,7 +176,7 @@ class MaxOrderSize(TradingControl):
     def validate(self,
                  asset,
                  amount,
-                 portfolio,
+                 positions,
                  _algo_datetime,
                  algo_current_data):
         """
@@ -232,7 +232,7 @@ class MaxPositionSize(TradingControl):
     def validate(self,
                  asset,
                  amount,
-                 portfolio,
+                 positions,
                  algo_datetime,
                  algo_current_data):
         """
@@ -244,7 +244,7 @@ class MaxPositionSize(TradingControl):
         if self.asset is not None and self.asset != asset:
             return
 
-        current_share_count = portfolio.positions[asset].amount
+        current_share_count = positions[asset].amount
         shares_post_order = current_share_count + amount
 
         too_many_shares = (self.max_shares is not None and
@@ -270,14 +270,14 @@ class LongOnly(TradingControl):
     def validate(self,
                  asset,
                  amount,
-                 portfolio,
+                 positions,
                  _algo_datetime,
                  _algo_current_data):
         """
         Fail if we would hold negative shares of asset after completing this
         order.
         """
-        if portfolio.positions[asset].amount + amount < 0:
+        if positions[asset].amount + amount < 0:
             self.fail(asset, amount, _algo_datetime)
 
 
@@ -290,7 +290,7 @@ class AssetDateBounds(TradingControl):
     def validate(self,
                  asset,
                  amount,
-                 portfolio,
+                 positions,
                  algo_datetime,
                  algo_current_data):
         """
@@ -336,7 +336,7 @@ class AccountControl(with_metaclass(abc.ABCMeta)):
 
     @abc.abstractmethod
     def validate(self,
-                 _portfolio,
+                 _positions,
                  _account,
                  _algo_datetime,
                  _algo_current_data):
@@ -389,7 +389,7 @@ class MaxLeverage(AccountControl):
             )
 
     def validate(self,
-                 _portfolio,
+                 _positions,
                  _account,
                  _algo_datetime,
                  _algo_current_data):
