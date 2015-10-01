@@ -200,7 +200,6 @@ class PerformancePeriod(object):
     def handle_dividends_paid(self, net_cash_payment):
         if net_cash_payment:
             self.handle_cash_payment(net_cash_payment)
-        self.calculate_performance()
 
     def handle_cash_payment(self, payment_amount):
         self.adjust_cash(payment_amount)
