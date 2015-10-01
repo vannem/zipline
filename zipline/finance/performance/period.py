@@ -167,8 +167,8 @@ class PerformancePeriod(object):
 
         self.period_cash_flow = 0.0
         self.starting_cash = starting_cash
-        self.starting_value = starting_cash
-        self.starting_exposure = starting_cash
+        self.starting_value = 0.0
+        self.starting_exposure = 0.0
 
         self.processed_transactions = {}
         self.orders_by_modified = {}
