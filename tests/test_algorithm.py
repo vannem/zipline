@@ -639,7 +639,9 @@ class TestTransformAlgorithm(TestCase):
 
         res2 = algo2.run(self.df)
 
-        np.testing.assert_array_equal(res1, res2)
+        for name in res1.columns:
+            np.testing.assert_array_equal(res1[name], res2[name],
+                                          "column={0} not equal".format(name))
 
     def test_data_frequency_setting(self):
         self.sim_params.data_frequency = 'daily'
