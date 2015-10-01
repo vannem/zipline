@@ -2279,15 +2279,12 @@ class TestPerformancePeriod(unittest.TestCase):
 
     def test_serialization(self):
         env = TradingEnvironment()
-        pt = perf.PositionTracker(env.asset_finder)
         pp = perf.PerformancePeriod(100, env.asset_finder)
-        pp.position_tracker = pt
 
         p_string = dumps_with_persistent_ids(pp)
         test = loads_with_persistent_ids(p_string, env=env)
 
         correct = pp.__dict__.copy()
-        del correct['_position_tracker']
 
         nt.assert_count_equal(test.__dict__.keys(), correct.keys())
 
