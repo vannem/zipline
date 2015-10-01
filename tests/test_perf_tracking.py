@@ -227,7 +227,7 @@ def calculate_results(sim_params,
 
         if bm_updated:
             msg = perf_tracker.handle_market_close_daily()
-            msg['account'] = perf_tracker.get_account(True)
+            msg['account'] = perf_tracker.get_account()
             results.append(msg)
             bm_updated = False
     return results
@@ -1052,8 +1052,6 @@ class TestPositionPerformance(unittest.TestCase):
         for trade in itertools.chain(trades_1[:-2], trades_2[:-2]):
             pt.update_last_sale(trade)
 
-        pp.calculate_performance()
-
         check_perf_period(
             pp,
             gross_leverage=2.0,
@@ -1080,8 +1078,6 @@ class TestPositionPerformance(unittest.TestCase):
         pt.update_last_sale(trades_1[-1])
         # and stock2 going to $11
         pt.update_last_sale(trades_2[-1])
-
-        pp.calculate_performance()
 
         # Validate that the account attributes were updated.
         account = pp.as_account()
@@ -1133,8 +1129,6 @@ class TestPositionPerformance(unittest.TestCase):
         for trade in trades[:-2]:
             pt.update_last_sale(trade)
 
-        pp.calculate_performance()
-
         check_perf_period(
             pp,
             gross_leverage=10.0,
@@ -1160,8 +1154,6 @@ class TestPositionPerformance(unittest.TestCase):
 
         # now simulate a price jump to $11
         pt.update_last_sale(trades[-1])
-
-        pp.calculate_performance()
 
         check_perf_period(
             pp,
@@ -1219,8 +1211,6 @@ class TestPositionPerformance(unittest.TestCase):
 
         for trade in trades:
             pt.update_last_sale(trade)
-
-        pp.calculate_performance()
 
         self.assertEqual(
             pp.period_cash_flow,
@@ -1318,8 +1308,6 @@ single short-sale transaction"""
         for trade in trades_1:
             pt.update_last_sale(trade)
 
-        pp.calculate_performance()
-
         self.assertEqual(
             pp.period_cash_flow,
             -1 * txn.price * txn.amount,
@@ -1374,8 +1362,6 @@ single short-sale transaction"""
 
         for trade in trades_2:
             pt.update_last_sale(trade)
-
-        pp.calculate_performance()
 
         self.assertEqual(
             pp.period_cash_flow,
@@ -1439,8 +1425,6 @@ single short-sale transaction"""
 
         for trade in trades_2:
             ptTotal.update_last_sale(trade)
-
-        ppTotal.calculate_performance()
 
         self.assertEqual(
             ppTotal.period_cash_flow,
@@ -1545,8 +1529,6 @@ trade after cover"""
         for trade in trades:
             pt.update_last_sale(trade)
 
-        pp.calculate_performance()
-
         short_txn_cost = short_txn.price * short_txn.amount
         cover_txn_cost = cover_txn.price * cover_txn.amount
 
@@ -1647,8 +1629,6 @@ shares in position"
         for trade in trades:
             pt.update_last_sale(trade)
 
-        pp.calculate_performance()
-
         self.assertEqual(
             pp.positions[1].last_sale_price,
             trades[-1].price,
@@ -1684,7 +1664,6 @@ shares in position"
         pp.handle_execution(sale_txn)
         pt.update_last_sale(down_tick)
 
-        pp.calculate_performance()
         self.assertEqual(
             pp.positions[1].last_sale_price,
             10,
@@ -1718,7 +1697,6 @@ shares in position"
         for trade in trades:
             pt3.update_last_sale(trade)
 
-        pp3.calculate_performance()
         self.assertEqual(
             pp3.positions[1].last_sale_price,
             10,
@@ -1762,8 +1740,6 @@ shares in position"
 
         for trade in trades:
             pt.update_last_sale(trade)
-
-        pp.calculate_performance()
 
         self.assertEqual(pp.positions[1].cost_basis, cost_bases[-1])
 
