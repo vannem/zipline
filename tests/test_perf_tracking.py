@@ -256,9 +256,6 @@ def check_perf_tracker_serialization(perf_tracker):
     for k in scalar_keys:
         nt.assert_equal(getattr(test, k), getattr(perf_tracker, k), k)
 
-    for period in test.perf_periods:
-        nt.assert_true(hasattr(period, '_position_tracker'))
-
 
 class TestSplitPerformance(unittest.TestCase):
     def setUp(self):

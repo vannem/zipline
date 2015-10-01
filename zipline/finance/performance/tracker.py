@@ -434,15 +434,15 @@ class PerformanceTracker(object):
         cumulative_stats = self.cumulative_performance.stats(pos_stats)
         todays_stats = self.todays_performance.stats(pos_stats)
 
-        minute_packet = self.to_dict(pos_stats,
-                                     cumulative_stats,
-                                     todays_stats,
-                                     emission_type='minute')
-
         self.cumulative_risk_metrics.update(todays_date,
                                             todays_stats.returns,
                                             bench_since_open,
                                             account)
+
+        minute_packet = self.to_dict(pos_stats,
+                                     cumulative_stats,
+                                     todays_stats,
+                                     emission_type='minute')
 
         # if this is the close, update dividends for the next day.
         # Return the performance tuple
