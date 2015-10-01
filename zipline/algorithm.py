@@ -957,7 +957,7 @@ class TradingAlgorithm(object):
     def updated_portfolio(self):
         if self.portfolio_needs_update:
             self._portfolio = \
-                self.perf_tracker.get_portfolio(self.performance_needs_update)
+                self.perf_tracker.get_portfolio()
             self.portfolio_needs_update = False
             self.performance_needs_update = False
         return self._portfolio
@@ -969,7 +969,7 @@ class TradingAlgorithm(object):
     def updated_account(self):
         if self.account_needs_update:
             self._account = \
-                self.perf_tracker.get_account(self.performance_needs_update)
+                self.perf_tracker.get_account()
             self.account_needs_update = False
             self.performance_needs_update = False
         return self._account
