@@ -952,14 +952,9 @@ class TradingAlgorithm(object):
 
     @property
     def portfolio(self):
-        return self.updated_portfolio()
-
-    def updated_portfolio(self):
-        if self.portfolio_needs_update:
+        if self._portfolio is None:
             self._portfolio = \
                 self.perf_tracker.get_portfolio()
-            self.portfolio_needs_update = False
-            self.performance_needs_update = False
         return self._portfolio
 
     @property
