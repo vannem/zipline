@@ -241,9 +241,6 @@ class TradingAlgorithm(object):
         # symbols to sids, and can be set using set_symbol_lookup_date()
         self._symbol_lookup_date = None
 
-        self.portfolio_needs_update = True
-        self.account_needs_update = True
-        self.performance_needs_update = True
         self._portfolio = None
         self._account = None
 
@@ -455,10 +452,6 @@ class TradingAlgorithm(object):
             self.perf_tracker = PerformanceTracker(
                 sim_params=sim_params, env=self.trading_environment
             )
-
-        self.portfolio_needs_update = True
-        self.account_needs_update = True
-        self.performance_needs_update = True
 
         self.data_gen = self._create_data_generator(source_filter, sim_params)
 
@@ -897,7 +890,7 @@ class TradingAlgorithm(object):
         for control in self.trading_controls:
             control.validate(asset,
                              amount,
-                             self.updated_portfolio(),
+                             self.portfolio,
                              self.get_datetime(),
                              self.trading_client.current_data)
 
@@ -959,14 +952,9 @@ class TradingAlgorithm(object):
 
     @property
     def account(self):
-        return self.updated_account()
-
-    def updated_account(self):
-        if self.account_needs_update:
+        if self._account is None:
             self._account = \
                 self.perf_tracker.get_account()
-            self.account_needs_update = False
-            self.performance_needs_update = False
         return self._account
 
     def set_logger(self, logger):
@@ -1235,8 +1223,8 @@ class TradingAlgorithm(object):
 
     def validate_account_controls(self):
         for control in self.account_controls:
-            control.validate(self.updated_portfolio(),
-                             self.updated_account(),
+            control.validate(self.portfolio,
+                             self.account,
                              self.get_datetime(),
                              self.trading_client.current_data)
 
