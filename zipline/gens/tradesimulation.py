@@ -124,7 +124,7 @@ class AlgorithmSimulator(object):
 
             # update the portfolio, so that if the user does
             # context.portfolio.positions, it's accurate
-            perf_tracker.get_portfolio(True)
+            perf_tracker.get_portfolio(dt_to_use)
 
             handle_data(algo, current_data, dt_to_use)
 

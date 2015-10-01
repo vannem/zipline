@@ -179,8 +179,6 @@ class PerformancePeriod(object):
         if obj is None:
             raise ValueError("position_tracker can not be None")
         self._position_tracker = obj
-        # we only calculate perf once we inject PositionTracker
-        self.calculate_performance()
 
     def rollover(self):
         self.starting_value = self.ending_value
@@ -195,7 +193,6 @@ class PerformancePeriod(object):
     def handle_dividends_paid(self, net_cash_payment):
         if net_cash_payment:
             self.handle_cash_payment(net_cash_payment)
-        self.calculate_performance()
 
     def handle_cash_payment(self, payment_amount):
         self.adjust_cash(payment_amount)
@@ -210,9 +207,9 @@ class PerformancePeriod(object):
     def adjust_field(self, field, value):
         setattr(self, field, value)
 
-    def calculate_performance(self):
+    def calculate_performance(self, dt):
         pt = self.position_tracker
-        pos_stats = calc_position_stats(pt, self.period_close)
+        pos_stats = calc_position_stats(pt, dt)
         self.ending_value = pos_stats.net_value
         self.ending_exposure = pos_stats.net_exposure
 

@@ -263,21 +263,19 @@ class PerformanceTracker(object):
             self.dividend_frame.sid != sid
         ]
 
-    def update_performance(self):
+    def update_performance(self, dt):
         # calculate performance as of last trade
         for perf_period in self.perf_periods:
-            perf_period.calculate_performance()
+            perf_period.calculate_performance(dt)
 
-    def get_portfolio(self, performance_needs_update):
-        if performance_needs_update:
-            self.update_performance()
-            self.account_needs_update = True
+    def get_portfolio(self, dt):
+        self.update_performance(dt)
+        self.account_needs_update = True
         return self.cumulative_performance.as_portfolio()
 
-    def get_account(self, performance_needs_update):
-        if performance_needs_update:
-            self.update_performance()
-            self.account_needs_update = True
+    def get_account(self, dt):
+        self.update_performance(dt)
+        self.account_needs_update = True
         if self.account_needs_update:
             self._update_account()
         return self._account
@@ -447,9 +445,9 @@ class PerformanceTracker(object):
             A tuple of the minute perf packet and daily perf packet.
             If the market day has not ended, the daily perf packet is None.
         """
-        self.update_performance()
+        self.update_performance(dt)
         todays_date = normalize_date(dt)
-        account = self.get_account(False)
+        account = self.get_account(dt)
 
         self.minute_performance.rollover()
 
@@ -476,8 +474,8 @@ class PerformanceTracker(object):
         Function called after handle_data when running with daily emission
         rate.
         """
-        self.update_performance()
         completed_date = self.day
+        self.update_performance(completed_date)
         account = self.get_account(False)
 
         # update risk metrics for cumulative performance

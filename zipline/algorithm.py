@@ -796,7 +796,7 @@ class TradingAlgorithm(object):
     def updated_portfolio(self):
         if self.portfolio_needs_update:
             self._portfolio = \
-                self.perf_tracker.get_portfolio(self.performance_needs_update)
+                self.perf_tracker.get_portfolio(self.datetime)
             self.portfolio_needs_update = False
             self.performance_needs_update = False
         return self._portfolio
