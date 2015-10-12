@@ -706,7 +706,7 @@ class SQLiteAdjustmentWriter(object):
                 stock_dividend_payouts['declared_date'].\
                 values.astype('datetime64[s]').astype(integer)
             stock_dividend_payouts['pay_date'] = \
-                stock_dividend_payouts['declared_date'].\
+                stock_dividend_payouts['pay_date'].\
                 values.astype('datetime64[s]').astype(integer)
         else:
             stock_dividend_payouts = DataFrame({
