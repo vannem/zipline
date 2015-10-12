@@ -63,7 +63,6 @@ import pickle
 from six import iteritems
 from datetime import datetime
 
-import numpy as np
 import pandas as pd
 from pandas.tseries.tools import normalize_date
 
@@ -82,10 +81,11 @@ class PerformanceTracker(object):
     """
     Tracks the performance of the algorithm.
     """
-    def __init__(self, sim_params, env):
+    def __init__(self, sim_params, env, adjustment_reader):
 
         self.sim_params = sim_params
         self.env = env
+        self._adjustment_reader = adjustment_reader
 
         self.period_start = self.sim_params.period_start
         self.period_end = self.sim_params.period_end
@@ -105,9 +105,6 @@ class PerformanceTracker(object):
                 (all_trading_days <= normalize_date(self.period_end)))
 
         self.trading_days = all_trading_days[mask]
-
-        self.dividend_frame = pd.DataFrame()
-        self._dividend_count = 0
 
         self.position_tracker = PositionTracker(asset_finder=env.asset_finder)
 
@@ -189,54 +186,6 @@ class PerformanceTracker(object):
             self.saved_dt = date
             self.todays_performance.period_close = self.saved_dt
 
-    def update_dividends(self, new_dividends):
-        """
-        Update our dividend frame with new dividends.  @new_dividends should be
-        a DataFrame with columns containing at least the entries in
-        zipline.protocol.DIVIDEND_FIELDS.
-        """
-
-        # Mark each new dividend with a unique integer id.  This ensures that
-        # we can differentiate dividends whose date/sid fields are otherwise
-        # identical.
-        new_dividends['id'] = np.arange(
-            self._dividend_count,
-            self._dividend_count + len(new_dividends),
-        )
-        self._dividend_count += len(new_dividends)
-
-        self.dividend_frame = pd.concat(
-            [self.dividend_frame, new_dividends]
-        ).sort(['pay_date', 'ex_date']).set_index('id', drop=False)
-
-    def initialize_dividends_from_other(self, other):
-        """
-        Helper for copying dividends to a new PerformanceTracker while
-        preserving dividend count.  Useful if a simulation needs to create a
-        new PerformanceTracker mid-stream and wants to preserve stored dividend
-        info.
-
-        Note that this does not copy unpaid dividends.
-        """
-        self.dividend_frame = other.dividend_frame
-        self._dividend_count = other._dividend_count
-
-    def handle_sid_removed_from_universe(self, sid):
-        """
-        This method handles any behaviors that must occur when a SID leaves the
-        universe of the TradingAlgorithm.
-
-        Parameters
-        __________
-        sid : int
-            The sid of the Asset being removed from the universe.
-        """
-
-        # Drop any dividends for the sid from the dividends frame
-        self.dividend_frame = self.dividend_frame[
-            self.dividend_frame.sid != sid
-        ]
-
     def update_performance(self):
         # calculate performance as of last trade
         for perf_period in self.perf_periods:
@@ -301,10 +250,6 @@ class PerformanceTracker(object):
         for perf_period in self.perf_periods:
             perf_period.handle_execution(event)
 
-    def process_dividend(self, dividend):
-
-        log.info("Ignoring DIVIDEND event.")
-
     def process_split(self, event):
         leftover_cash = self.position_tracker.handle_split(event)
         if leftover_cash > 0:
@@ -364,31 +309,24 @@ class PerformanceTracker(object):
         is the next trading day.  Apply all such benefits, then recalculate
         performance.
         """
-        if len(self.dividend_frame) == 0:
-            # We don't currently know about any dividends for this simulation
-            # period, so bail.
-            return
+        # If positions.
 
+        position_tracker = self.position_tracker
+        held_sids = set(self.position_tracker.positions)
         # Dividends whose ex_date is the next trading day.  We need to check if
         # we own any of these stocks so we know to pay them out when the pay
         # date comes.
-        ex_date_mask = (self.dividend_frame['ex_date'] == next_trading_day)
-        dividends_earnable = self.dividend_frame[ex_date_mask]
+        if held_sids:
+            dividends_earnable = self._adjustment_reader.\
+                get_dividends_with_ex_date(held_sids, next_trading_day)
+            stock_dividends = self._adjustment_reader.\
+                get_stock_dividends_with_ex_date(held_sids, next_trading_day)
+            position_tracker.earn_dividends(dividends_earnable,
+                                            stock_dividends)
 
-        # Dividends whose pay date is the next trading day.  If we held any of
-        # these stocks on midnight before the ex_date, we need to pay these out
-        # now.
-        pay_date_mask = (self.dividend_frame['pay_date'] == next_trading_day)
-        dividends_payable = self.dividend_frame[pay_date_mask]
-
-        position_tracker = self.position_tracker
-        if len(dividends_earnable):
-            position_tracker.earn_dividends(dividends_earnable)
-
-        if not len(dividends_payable):
+        net_cash_payment = position_tracker.pay_dividends(next_trading_day)
+        if not net_cash_payment:
             return
-
-        net_cash_payment = position_tracker.pay_dividends(dividends_payable)
 
         for period in self.perf_periods:
             # notify periods to update their stats
@@ -545,10 +483,6 @@ class PerformanceTracker(object):
             {k: v for k, v in iteritems(self.__dict__)
                 if not k.startswith('_')}
 
-        state_dict['dividend_frame'] = pickle.dumps(self.dividend_frame)
-
-        state_dict['_dividend_count'] = self._dividend_count
-
         # we already store perf periods as attributes
         del state_dict['perf_periods']
 
@@ -566,9 +500,6 @@ class PerformanceTracker(object):
             raise BaseException("PerformanceTracker saved state is too old.")
 
         self.__dict__.update(state)
-
-        # Handle the dividend frame specially
-        self.dividend_frame = pickle.loads(state['dividend_frame'])
 
         # properly setup the perf periods
         self.perf_periods = []
