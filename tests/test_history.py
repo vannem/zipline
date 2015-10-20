@@ -644,6 +644,113 @@ def handle_data(context, data):
         self.assertEquals(prices_hd[penultimate_hd_dt],
                           prices_bts[newest_bts_dt])
 
+    def test_history_in_before_trading_starts_minutes(self):
+        algo_text = """
+from zipline.api import history
+
+def initialize(context):
+    context.first_loop = True
+
+def before_trading_start(context, data):
+    if not context.first_loop:
+        price_bts = history(bar_count=1, frequency='1m', field='price')
+        context.price_bts = price_bts
+
+def handle_data(context, data):
+    # prices_hd = history(bar_count=1, frequency='1m', field='price')
+    # context.prices_hd = prices_hd
+    context.first_loop = False
+
+""".strip()
+
+        #      March 2006
+        # Su Mo Tu We Th Fr Sa
+        #          1  2  3  4
+        #  5  6  7  8  9 10 11
+        # 12 13 14 15 16 17 18
+        # 19 20 21 22 23 24 25
+        # 26 27 28 29 30 31
+        start = pd.Timestamp('2006-03-20', tz='UTC')
+        end = pd.Timestamp('2006-03-22', tz='UTC')
+
+        sim_params = factory.create_simulation_parameters(
+            start=start, end=end)
+
+        test_algo = TradingAlgorithm(
+            script=algo_text,
+            data_frequency='minute',
+            sim_params=sim_params,
+            env=TestHistoryAlgo.env,
+        )
+
+        source = RandomWalkSource(start=start, end=end)
+        output = test_algo.run(source)
+        self.assertIsNotNone(output)
+
+        # Get the prices recorded by history() within handle_data()
+        # prices_hd = test_algo.prices_hd[0]
+        # Get the prices recorded by history() within BTS
+        price_bts = test_algo.price_bts[0]
+
+    def test_history_in_before_trading_starts_volume(self):
+        algo_text = """
+from zipline.api import history
+
+def initialize(context):
+    context.first_day = True
+
+def before_trading_start(context, data):
+    if not context.first_day:
+        volume_bts = history(bar_count=2, frequency='1d', field='volume')
+        context.volume_bts = volume_bts
+
+def handle_data(context, data):
+    volume_hd = history(bar_count=2, frequency='1d', field='volume')
+    context.volume_hd = volume_hd
+    context.first_day = False
+""".strip()
+
+        #      March 2006
+        # Su Mo Tu We Th Fr Sa
+        #          1  2  3  4
+        #  5  6  7  8  9 10 11
+        # 12 13 14 15 16 17 18
+        # 19 20 21 22 23 24 25
+        # 26 27 28 29 30 31
+        start = pd.Timestamp('2006-03-20', tz='UTC')
+        end = pd.Timestamp('2006-03-22', tz='UTC')
+
+        sim_params = factory.create_simulation_parameters(
+            start=start, end=end)
+
+        test_algo = TradingAlgorithm(
+            script=algo_text,
+            data_frequency='minute',
+            sim_params=sim_params,
+            env=TestHistoryAlgo.env,
+        )
+
+        source = RandomWalkSource(start=start,
+                                  end=end)
+        output = test_algo.run(source)
+        self.assertIsNotNone(output)
+
+        # Get the volume recorded by history() within handle_data()
+        volume_hd = test_algo.volume_hd[0]
+        # Get the volume recorded by history() within BTS
+        volume_bts = test_algo.volume_bts[0]
+
+        penultimate_hd_dt = pd.Timestamp(
+            '2006-03-21 4:00 PM', tz='US/Eastern').tz_convert('UTC')
+        # Midnight of the day on which BTS is invoked.
+        newest_bts_dt = normalize_date(pd.Timestamp(
+            '2006-03-22 04:00 PM', tz='US/Eastern').tz_convert('UTC'))
+
+        # When history() is called in BTS, its 'current' volume value
+        # should equal the sum of the previous day.
+        self.assertEquals(volume_hd[penultimate_hd_dt],
+                          volume_bts[newest_bts_dt])
+
     def test_basic_history_one_day(self):
         algo_text = """
 from zipline.api import history, add_history
